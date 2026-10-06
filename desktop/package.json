@@ -1,0 +1,7 @@
+{
+  "name": "hpo-print-agent-dashboard",
+  "version": "1.8.0",
+  "private": true,
+  "type": "module",
+  "main": "desktop/main.mjs"
+}

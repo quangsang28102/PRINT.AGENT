@@ -1,0 +1,11 @@
+{
+  "serverUrl": "http://localhost:8386",
+  "socketPath": "/device",
+  "agentToken": "PASTE_TOKEN_FROM_ADMIN_CREATE_AGENT",
+  "agentId": "ROOM01-PRINT01",
+  "printerName": "HPO-MP-TRET",
+  "nodePath": "C:/Program Files/nodejs/node.exe",
+  "serviceVersion": "1.8.0",
+  "tempDirectory": "C:/ExamPrintAgent/tmp",
+  "logDirectory": "C:/ExamPrintAgent/logs"
+}

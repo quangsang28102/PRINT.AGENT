@@ -1,0 +1,23 @@
+{
+  "name": "exam-print-agent",
+  "version": "1.8.0",
+  "private": true,
+  "type": "module",
+  "main": "desktop/main.mjs",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test",
+    "app": "electron .",
+    "build:installer": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\installer\\build.ps1"
+  },
+  "dependencies": {
+    "docxtemplater": "^3.66.5",
+    "docxtemplater-image-module-free": "^1.1.1",
+    "pizzip": "^3.2.0",
+    "sharp": "^0.34.4",
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "electron": "44.5.1"
+  }
+}
