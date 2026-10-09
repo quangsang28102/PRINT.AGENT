@@ -142,7 +142,7 @@ body { font-size: 15px; }
 .settings-intro p { margin: 0; color: #71818d; font-size: 14px; line-height: 1.5; }
 .template-notice { margin: 0 0 15px; padding: 12px 15px; border: 1px solid #cfe8dc; border-radius: 9px; color: #276a4c; background: #f0faf4; font-size: 14px; line-height: 1.5; }
 .template-notice[data-level="error"] { border-color: #f0d3d0; color: #a13f3a; background: #fff6f4; }
-.template-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+.template-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
 .template-card { min-width: 0; padding: 20px; border: 1px solid #e2e9ec; border-radius: 13px; background: #fff; box-shadow: 0 4px 14px #213b4d06; }
 .template-card[data-configured="false"] { border-style: dashed; }
 .template-card-heading { display: flex; align-items: center; gap: 12px; }
@@ -173,6 +173,7 @@ body { font-size: 15px; }
   .button { padding-right: 10px; padding-left: 10px; }
   .info-grid { gap: 8px; }
   .info-card { gap: 9px; padding: 13px 11px; }
+  .template-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 940px) {

@@ -24,7 +24,7 @@ Bộ cài nằm tại `installer/output/ExamPrintAgentSetup.exe`. Chép file nà
 
 Setup tự tạo biểu tượng HPO Print Agent trên Desktop và Start Menu.
 
-Tab **Cấu hình mẫu in** cho phép chọn mẫu DOCX riêng cho Lý thuyết và Mô phỏng. Các mẫu được lưu trong `%APPDATA%\HPO Print Agent\templates`, không bị bộ cài ghi đè và không gửi lên SERVER.
+Tab **Cấu hình mẫu in** cho phép chọn DOCX riêng cho Lý thuyết hạng B (30 câu), Lý thuyết hạng C1 (35 câu) và Mô phỏng. Agent chọn mẫu lý thuyết theo hạng trong hồ sơ học viên. Các mẫu được lưu trong `%APPDATA%\HPO Print Agent\templates`, không bị bộ cài ghi đè và không gửi lên SERVER.
 
 ## Sử dụng
 

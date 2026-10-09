@@ -5,7 +5,7 @@
   "agentId": "ROOM01-PRINT01",
   "printerName": "HPO-MP-TRET",
   "nodePath": "C:/Program Files/nodejs/node.exe",
-  "serviceVersion": "1.8.0",
+  "serviceVersion": "1.9.1",
   "tempDirectory": "C:/ExamPrintAgent/tmp",
   "logDirectory": "C:/ExamPrintAgent/logs"
 }

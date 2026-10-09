@@ -12,8 +12,9 @@ const installDirectory = app.isPackaged ? path.dirname(app.getPath("exe")) : dev
 const configPath = path.join(installDirectory, "config.json");
 const agentEntryPath = path.join(installDirectory, "index.js");
 const templateTypes = {
-  theory: { label: "Lý thuyết", fileName: "theory.docx", defaultFileName: "theory-result.docx" },
-  simulation: { label: "Mô phỏng", fileName: "simulation.docx", defaultFileName: "simulation-result.docx" },
+  "theory-b-30": { label: "Lý thuyết hạng B (30 câu)", fileName: "theory-b-30.docx", defaultDirectory: "theory", defaultFileName: "theory-b-30-result.docx" },
+  "theory-c1-35": { label: "Lý thuyết hạng C1 (35 câu)", fileName: "theory-c1-35.docx", defaultDirectory: "theory", defaultFileName: "theory-c1-35-result.docx" },
+  simulation: { label: "Mô phỏng", fileName: "simulation.docx", defaultDirectory: "simulation", defaultFileName: "simulation-result.docx" },
 };
 const singleInstance = app.requestSingleInstanceLock();
 
@@ -178,7 +179,7 @@ if (!singleInstance) {
         customAvailable = true;
       } catch { }
       try {
-        await fs.access(path.join(installDirectory, "templates", type, definition.defaultFileName));
+        await fs.access(path.join(installDirectory, "templates", definition.defaultDirectory, definition.defaultFileName));
         defaultAvailable = true;
       } catch { }
       statuses[type] = {

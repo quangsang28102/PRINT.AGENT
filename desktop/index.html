@@ -32,7 +32,7 @@
         <section class="page-view" id="dashboard-view">
         <section class="welcome-row">
           <div><h2>Xin chào 👋</h2><p>Kiểm tra kết nối và hoạt động in của máy này tại đây.</p></div>
-          <span class="version-chip">PHIÊN BẢN 1.8.0</span>
+          <span class="version-chip">PHIÊN BẢN 1.9.1</span>
         </section>
 
         <section class="status-card" id="status-card" data-phase="starting">
@@ -92,13 +92,22 @@
           </div>
           <div class="template-notice" id="template-feedback" role="status" aria-live="polite" hidden></div>
           <div class="template-grid">
-            <article class="template-card" data-template-type="theory">
-              <div class="template-card-heading"><div class="document-icon">W</div><div><span class="template-eyebrow">PHẦN THI</span><h3>Lý thuyết</h3></div></div>
-              <p class="template-description">Mẫu được dùng khi Agent nhận kết quả thi Lý thuyết cần in.</p>
-              <div class="template-state" id="theory-template-state"></div>
+            <article class="template-card" data-template-type="theory-b-30">
+              <div class="template-card-heading"><div class="document-icon">W</div><div><span class="template-eyebrow">LÝ THUYẾT</span><h3>Hạng B · 30 câu</h3></div></div>
+              <p class="template-description">Dùng cho hạng B, gồm cả số sàn và số tự động.</p>
+              <div class="template-state" id="theory-b-30-template-state"></div>
               <div class="template-actions">
-                <button class="button button-primary template-choose" type="button" data-template-type="theory">Tải mẫu Word</button>
-                <button class="button button-quiet template-reset" type="button" data-template-type="theory" hidden>Dùng mẫu mặc định</button>
+                <button class="button button-primary template-choose" type="button" data-template-type="theory-b-30">Tải mẫu Word</button>
+                <button class="button button-quiet template-reset" type="button" data-template-type="theory-b-30" hidden>Bỏ mẫu riêng</button>
+              </div>
+            </article>
+            <article class="template-card" data-template-type="theory-c1-35">
+              <div class="template-card-heading"><div class="document-icon">W</div><div><span class="template-eyebrow">LÝ THUYẾT</span><h3>Hạng C1 · 35 câu</h3></div></div>
+              <p class="template-description">Dùng riêng cho thí sinh dự sát hạch hạng C1.</p>
+              <div class="template-state" id="theory-c1-35-template-state"></div>
+              <div class="template-actions">
+                <button class="button button-primary template-choose" type="button" data-template-type="theory-c1-35">Tải mẫu Word</button>
+                <button class="button button-quiet template-reset" type="button" data-template-type="theory-c1-35" hidden>Bỏ mẫu riêng</button>
               </div>
             </article>
             <article class="template-card" data-template-type="simulation">
@@ -113,7 +122,7 @@
           </div>
           <div class="template-help">
             <strong>Lưu ý về mẫu Word</strong>
-            <p>Chọn file <code>.docx</code>. Mẫu cần giữ nguyên các trường thay thế (placeholder) tương ứng để dữ liệu bài thi được điền vào đúng vị trí. Tải mẫu mới lên sẽ thay mẫu riêng đang dùng cho loại đó.</p>
+            <p>Chọn file <code>.docx</code>. Hai mẫu Lý thuyết được lưu riêng: hạng B (30 câu) và hạng C1 (35 câu); Agent chọn theo hạng lấy từ hồ sơ học viên. Mẫu cần giữ nguyên các placeholder để dữ liệu bài thi được điền đúng vị trí.</p>
             <p>Mẫu riêng nằm trong AppData của tài khoản Windows này; cập nhật hoặc cài lại ứng dụng không ghi đè chúng.</p>
           </div>
         </section>

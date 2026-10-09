@@ -2,7 +2,7 @@
 ; The bundle is staged by build.ps1 and contains the Electron dashboard and Node agent.
 
 #define AppName "Exam Print Agent"
-#define AppVersion "1.8.0"
+#define AppVersion "1.9.1"
 
 [Setup]
 AppId={{B1F6F01E-4B11-4E9D-A2F9-1234567890AB}}

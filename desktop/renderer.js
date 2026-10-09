@@ -22,7 +22,11 @@ const statusFooters = {
 
 const state = { status: null, logs: [], query: "" };
 const byId = (id) => document.getElementById(id);
-const templateLabels = { theory: "Lý thuyết", simulation: "Mô phỏng" };
+const templateLabels = {
+  "theory-b-30": "Lý thuyết hạng B (30 câu)",
+  "theory-c1-35": "Lý thuyết hạng C1 (35 câu)",
+  simulation: "Mô phỏng",
+};
 
 function formatTime(value) {
   const date = new Date(value);
@@ -167,6 +171,7 @@ function renderTemplates(templates) {
       badge.textContent = "Mẫu riêng";
       name.textContent = template.fileName || "Mẫu Word đã tải lên";
       chooseButton.textContent = "Thay mẫu Word";
+      resetButton.textContent = template.defaultAvailable ? "Dùng mẫu mặc định" : "Bỏ mẫu riêng";
       resetButton.hidden = false;
     } else if (template.defaultAvailable) {
       badge.className = "template-badge default";
@@ -214,7 +219,9 @@ document.querySelectorAll(".template-choose").forEach((button) => {
 document.querySelectorAll(".template-reset").forEach((button) => {
   button.addEventListener("click", async () => {
     const type = button.dataset.templateType;
-    const fallback = type === "simulation" ? "mẫu Mô phỏng đi kèm ứng dụng" : "không dùng mẫu Lý thuyết cho đến khi tải mẫu mới lên";
+    const fallback = type === "simulation"
+      ? "mẫu Mô phỏng đi kèm ứng dụng"
+      : "mẫu mặc định tương ứng nếu bản cài có; nếu không, cần tải mẫu đúng hạng lên trước khi in";
     if (!window.confirm(`Bỏ mẫu ${templateLabels[type]} đang chọn và quay về ${fallback}?`)) return;
     button.disabled = true;
     try {

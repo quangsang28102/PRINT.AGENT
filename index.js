@@ -85,6 +85,7 @@ socket.on(PRINT_SOCKET_EVENTS.JOB_AVAILABLE, async (job) => {
     const payload = await response.json();
     await renderWordTemplate(payload.templateType || job.templateType, payload.templateData, documentPath, {
       customTemplateDirectory: process.env.PRINT_AGENT_TEMPLATE_DIRECTORY,
+      templateVariant: payload.templateVariant,
     });
     socket.emit(PRINT_SOCKET_EVENTS.JOB_PROGRESS, { jobId: job.jobId, status: PRINT_PROGRESS_STATUS.PRINTING });
     await printWordDocument(documentPath, job.printerName, job.copies);

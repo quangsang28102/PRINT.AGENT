@@ -8,17 +8,50 @@ import sharp from "sharp";
 
 const templateDirectory = path.join(path.dirname(fileURLToPath(import.meta.url)), "templates");
 
-const templatePathFor = (templateType) => {
-  const safeType = String(templateType || "").toLowerCase();
-  const fileName = safeType === "simulation" ? "simulation-result.docx" : safeType === "theory" ? "theory-result.docx" : null;
-  if (!fileName) throw new Error(`Không hỗ trợ loại form: ${templateType}`);
-  return path.join(templateDirectory, safeType, fileName);
+const theoryVariants = {
+  "theory-b-30": { label: "Lý thuyết hạng B (30 câu)", fileName: "theory-b-30.docx", defaultFileName: "theory-b-30-result.docx" },
+  "theory-c1-35": { label: "Lý thuyết hạng C1 (35 câu)", fileName: "theory-c1-35.docx", defaultFileName: "theory-c1-35-result.docx" },
 };
 
-const customTemplatePathFor = (templateType, customTemplateDirectory) => {
+const theoryVariantFromLicense = (licenseType) => {
+  const normalized = String(licenseType || "")
+    .normalize("NFKC")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+  if (!normalized) return null;
+  return normalized.includes("C1") ? "theory-c1-35" : "theory-b-30";
+};
+
+const resolveTheoryVariant = (templateVariant, templateData) => {
+  const licenseVariant = theoryVariantFromLicense(templateData?.theory_license_type);
+  if (templateVariant && !theoryVariants[templateVariant]) {
+    throw new Error(`Không hỗ trợ mẫu lý thuyết: ${templateVariant}`);
+  }
+  if (templateVariant && licenseVariant && templateVariant !== licenseVariant) {
+    throw new Error("Hạng học viên không khớp với loại mẫu Word được chọn.");
+  }
+  return templateVariant || licenseVariant;
+};
+
+const templatePathFor = (templateType, templateVariant) => {
   const safeType = String(templateType || "").toLowerCase();
-  if (safeType !== "theory" && safeType !== "simulation") throw new Error(`Không hỗ trợ loại form: ${templateType}`);
-  return customTemplateDirectory ? path.join(customTemplateDirectory, `${safeType}.docx`) : null;
+  if (safeType === "simulation") return path.join(templateDirectory, "simulation", "simulation-result.docx");
+  if (safeType === "theory") {
+    const fileName = templateVariant ? theoryVariants[templateVariant].defaultFileName : "theory-result.docx";
+    return path.join(templateDirectory, "theory", fileName);
+  }
+  throw new Error(`Không hỗ trợ loại form: ${templateType}`);
+};
+
+const customTemplatePathFor = (templateType, templateVariant, customTemplateDirectory) => {
+  const safeType = String(templateType || "").toLowerCase();
+  if (!customTemplateDirectory) return null;
+  if (safeType === "simulation") return path.join(customTemplateDirectory, "simulation.docx");
+  if (safeType === "theory") {
+    const fileName = templateVariant ? theoryVariants[templateVariant].fileName : "theory.docx";
+    return path.join(customTemplateDirectory, fileName);
+  }
+  throw new Error(`Không hỗ trợ loại form: ${templateType}`);
 };
 
 const emptyPhoto = () => sharp({
@@ -42,7 +75,11 @@ const formatTheoryDate = (value, includeTime = false) => {
 
 /** Fill the local Word form. Printing itself is delegated to Microsoft Word. */
 export const renderWordTemplate = async (templateType, templateData, outputPath, options = {}) => {
-  const customPath = customTemplatePathFor(templateType, options.customTemplateDirectory);
+  const safeType = String(templateType || "").toLowerCase();
+  const templateVariant = safeType === "theory"
+    ? resolveTheoryVariant(options.templateVariant, templateData)
+    : undefined;
+  const customPath = customTemplatePathFor(templateType, templateVariant, options.customTemplateDirectory);
   let templateBuffer;
   if (customPath) {
     try {
@@ -53,11 +90,15 @@ export const renderWordTemplate = async (templateType, templateData, outputPath,
   }
   if (!templateBuffer) {
     try {
-      templateBuffer = await fs.readFile(templatePathFor(templateType));
+      templateBuffer = await fs.readFile(templatePathFor(templateType, templateVariant));
     } catch (error) {
       if (error.code !== "ENOENT") throw error;
-      const typeName = String(templateType).toLowerCase() === "theory" ? "Lý thuyết" : "Mô phỏng";
-      throw new Error(`Chưa có mẫu Word cho phần thi ${typeName}. Mở tab Cấu hình trong HPO Print Agent để tải mẫu .docx lên.`);
+      const typeName = safeType === "theory"
+        ? templateVariant
+          ? theoryVariants[templateVariant].label
+          : "Lý thuyết"
+        : "Mô phỏng";
+      throw new Error(`Chưa có mẫu Word cho phần thi ${typeName}. Mở tab Cấu hình mẫu in trong HPO Print Agent để tải mẫu .docx lên.`);
     }
   }
   const imageModule = new ImageModule({
@@ -69,14 +110,19 @@ export const renderWordTemplate = async (templateType, templateData, outputPath,
     },
     getSize: (_image, tagValue) => [tagValue?.width || 113, tagValue?.height || 151],
   });
-  const document = new Docxtemplater(new PizZip(templateBuffer), {
+  const templateZip = new PizZip(templateBuffer);
+  const documentXml = templateZip.file("word/document.xml")?.asText() || "";
+  const documentText = documentXml.replace(/<[^>]+>/g, "");
+  const imageTag = safeType === "theory" ? "{{%theory_image}}" : "{{%simulation_image}}";
+  const document = new Docxtemplater(templateZip, {
     delimiters: { start: "{{", end: "}}" },
     linebreaks: true,
-    modules: String(templateType || "").toLowerCase() === "simulation" ? [imageModule] : [],
+    modules: documentText.includes(imageTag) ? [imageModule] : [],
   });
   const renderData = String(templateType || "").toLowerCase() === "theory"
     ? {
         ...templateData,
+        theory_image: templateData?.theory_image || { value: null, width: 113, height: 151 },
         theory_exam_date: formatTheoryDate(templateData?.theory_exam_date),
         theory_start_time: formatTheoryDate(templateData?.theory_start_time, true),
         theory_end_time: formatTheoryDate(templateData?.theory_end_time, true),

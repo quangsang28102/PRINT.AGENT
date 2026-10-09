@@ -32,13 +32,18 @@ if ($LASTEXITCODE -ne 0) { throw "Could not create the Print Agent icon (exit co
 
 $agentFiles = @("index.js", "wordPrintRenderer.js", "runtime-constants.js", "print-docx.ps1", "package.json", "package-lock.json", "config.example.json", "setup.ps1", "install-agent-task.ps1", "uninstall-agent.ps1")
 foreach ($file in $agentFiles) { Copy-Item -LiteralPath (Join-Path $projectRoot $file) -Destination $bundleDirectory }
-foreach ($templateType in @("theory", "simulation")) {
-  $templateName = if ($templateType -eq "theory") { "theory-result.docx" } else { "simulation-result.docx" }
-  $templateSource = Join-Path $projectRoot "templates\$templateType\$templateName"
-  if (Test-Path -LiteralPath $templateSource -PathType Leaf) {
-    $templateTargetDirectory = Join-Path $bundleDirectory "templates\$templateType"
-    New-Item -ItemType Directory -Path $templateTargetDirectory -Force | Out-Null
-    Copy-Item -LiteralPath $templateSource -Destination $templateTargetDirectory
+ $templateFiles = @{
+  theory = @("theory-result.docx", "theory-b-30-result.docx", "theory-c1-35-result.docx")
+  simulation = @("simulation-result.docx")
+}
+foreach ($templateType in $templateFiles.Keys) {
+  foreach ($templateName in $templateFiles[$templateType]) {
+    $templateSource = Join-Path $projectRoot "templates\$templateType\$templateName"
+    if (Test-Path -LiteralPath $templateSource -PathType Leaf) {
+      $templateTargetDirectory = Join-Path $bundleDirectory "templates\$templateType"
+      New-Item -ItemType Directory -Path $templateTargetDirectory -Force | Out-Null
+      Copy-Item -LiteralPath $templateSource -Destination $templateTargetDirectory
+    }
   }
 }
 Copy-Item -Path (Join-Path $electronDirectory "*") -Destination $bundleDirectory -Recurse -Force
