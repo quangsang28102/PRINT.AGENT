@@ -12,8 +12,8 @@ const installDirectory = app.isPackaged ? path.dirname(app.getPath("exe")) : dev
 const configPath = path.join(installDirectory, "config.json");
 const agentEntryPath = path.join(installDirectory, "index.js");
 const templateTypes = {
-  "theory-b-30": { label: "Lý thuyết hạng B (30 câu)", fileName: "theory-b-30.docx", defaultDirectory: "theory", defaultFileName: "theory-b-30-result.docx" },
-  "theory-c1-35": { label: "Lý thuyết hạng C1 (35 câu)", fileName: "theory-c1-35.docx", defaultDirectory: "theory", defaultFileName: "theory-c1-35-result.docx" },
+  "theory-b-30": { label: "Lý thuyết (30 câu)", fileName: "theory-b-30.docx", defaultDirectory: "theory", defaultFileName: "theory-b-30-result.docx" },
+  "theory-c1-35": { label: "Lý thuyết (35 câu)", fileName: "theory-c1-35.docx", defaultDirectory: "theory", defaultFileName: "theory-c1-35-result.docx" },
   simulation: { label: "Mô phỏng", fileName: "simulation.docx", defaultDirectory: "simulation", defaultFileName: "simulation-result.docx" },
 };
 const singleInstance = app.requestSingleInstanceLock();
@@ -407,6 +407,7 @@ if (!singleInstance) {
     updateTray();
   }
 
+  ipcMain.handle("app:get-version", () => app.getVersion());
   ipcMain.handle("agent:get-state", () => ({ ...status }));
   ipcMain.handle("agent:get-logs", () => [...logBuffer]);
   ipcMain.handle("agent:start", () => startAgent());

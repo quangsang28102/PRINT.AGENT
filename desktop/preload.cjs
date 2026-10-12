@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("printAgent", {
+  getVersion: () => ipcRenderer.invoke("app:get-version"),
   getState: () => ipcRenderer.invoke("agent:get-state"),
   getLogs: () => ipcRenderer.invoke("agent:get-logs"),
   start: () => ipcRenderer.invoke("agent:start"),

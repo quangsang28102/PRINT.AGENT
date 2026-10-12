@@ -65,7 +65,7 @@ SERVER gửi PrintJobAvailable
 1. SERVER quyết định job đủ điều kiện và gửi thông báo tới agent được định tuyến. Agent không tự truy vấn database hoặc tự tạo danh sách bài thi cần in.
 2. Agent bỏ qua thông báo trùng `jobId` đang được xử lý, rồi gửi xác nhận đã nhận.
 3. Agent tải payload từ `payloadEndpoint` với token của agent. Payload chứa loại mẫu (`theory` hoặc `simulation`) và dữ liệu cần điền.
-4. `wordPrintRenderer.js` ưu tiên mẫu riêng theo tài khoản Windows hiện tại tại `%APPDATA%\HPO Print Agent\templates`. Lý thuyết dùng `theory-b-30.docx` cho hạng B (cả số sàn/tự động), hoặc `theory-c1-35.docx` cho hạng C1; Mô phỏng dùng `simulation.docx`. Hạng được chốt trên SERVER từ hồ sơ học viên và gửi kèm job. Nếu thiếu đúng mẫu của hạng, job thất bại thay vì âm thầm dùng form có số câu không phù hợp.
+4. `wordPrintRenderer.js` ưu tiên mẫu riêng theo tài khoản Windows hiện tại tại `%APPDATA%\HPO Print Agent\templates`. Lý thuyết dùng `theory-b-30.docx` nếu dữ liệu kết quả có tối đa 30 câu, hoặc `theory-c1-35.docx` nếu có trên 30 câu; giá trị hạng trong hồ sơ không quyết định mẫu. Mô phỏng dùng `simulation.docx`. SERVER gửi kèm `templateVariant`, còn Agent đối chiếu số câu từ các trường `theory_qNN_aN` để tránh chọn sai mẫu khi dữ liệu hạng không chính xác.
 5. Placeholder trong mẫu dùng cú pháp `{{ten_truong}}`. Với mẫu mô phỏng, ảnh base64 được xử lý và chèn vào DOCX; với mẫu lý thuyết, một số ngày/giờ được định dạng theo múi giờ Việt Nam.
 6. Agent báo trạng thái đang in, sau đó gọi `print-docx.ps1`. Script dùng Microsoft Word COM để mở DOCX ẩn và gửi lệnh in tới máy in Windows. Số bản được giới hạn từ 1 đến 10.
 7. Nếu thành công, agent phát `PrintJobCompleted`; nếu lỗi tải dữ liệu, render hoặc Word/máy in, agent phát `PrintJobFailed` kèm mã lỗi/thông báo. File DOCX tạm được xóa sau khi xử lý.
@@ -76,7 +76,7 @@ SERVER gửi PrintJobAvailable
 
 ## 5. Mẫu Word
 
-- Mẫu do người dùng chọn trong tab cấu hình của desktop app được lưu cục bộ dưới `%APPDATA%\HPO Print Agent\templates`; chúng không được tải lên SERVER.
+- Mẫu do người dùng chọn trong tab cấu hình của desktop app được lưu cục bộ dưới `%APPDATA%\HPO Print Agent\templates`; chúng không được tải lên SERVER. Với Lý thuyết, mẫu 30 câu dùng khi kết quả có tối đa 30 câu, còn mẫu 35 câu dùng khi kết quả có trên 30 câu.
 - Mẫu riêng ghi đè mẫu mặc định cùng loại. Hai mẫu Lý thuyết là độc lập; thay mẫu B không ghi đè mẫu C1 và ngược lại. Khôi phục/xóa mẫu riêng sẽ đưa agent về mẫu mặc định đã đóng gói, nếu bản build có mẫu đó.
 - Mẫu phải giữ nguyên tên placeholder mà dữ liệu job cung cấp. Thay đổi cấu trúc/placeholder có thể khiến render job lỗi.
 - Nếu muốn bản cài có mẫu mặc định, phải đóng gói đúng từng biến thể Lý thuyết (`theory-b-30-result.docx`, `theory-c1-35-result.docx`) và mẫu Mô phỏng. Không đưa dữ liệu thí sinh thật vào mẫu hoặc repository.

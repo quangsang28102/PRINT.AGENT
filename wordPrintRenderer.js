@@ -9,28 +9,25 @@ import sharp from "sharp";
 const templateDirectory = path.join(path.dirname(fileURLToPath(import.meta.url)), "templates");
 
 const theoryVariants = {
-  "theory-b-30": { label: "Lý thuyết hạng B (30 câu)", fileName: "theory-b-30.docx", defaultFileName: "theory-b-30-result.docx" },
-  "theory-c1-35": { label: "Lý thuyết hạng C1 (35 câu)", fileName: "theory-c1-35.docx", defaultFileName: "theory-c1-35-result.docx" },
+  "theory-b-30": { label: "Lý thuyết (30 câu)", fileName: "theory-b-30.docx", defaultFileName: "theory-b-30-result.docx" },
+  "theory-c1-35": { label: "Lý thuyết (35 câu)", fileName: "theory-c1-35.docx", defaultFileName: "theory-c1-35-result.docx" },
 };
 
-const theoryVariantFromLicense = (licenseType) => {
-  const normalized = String(licenseType || "")
-    .normalize("NFKC")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "");
-  if (!normalized) return null;
-  return normalized.includes("C1") ? "theory-c1-35" : "theory-b-30";
+const theoryVariantFromQuestionCount = (templateData) => {
+  const questionNumbers = new Set();
+  for (const key of Object.keys(templateData || {})) {
+    const match = key.match(/^theory_q(\d+)_a[1-4]$/);
+    if (match) questionNumbers.add(Number(match[1]));
+  }
+  return questionNumbers.size > 30 ? "theory-c1-35" : "theory-b-30";
 };
 
 const resolveTheoryVariant = (templateVariant, templateData) => {
-  const licenseVariant = theoryVariantFromLicense(templateData?.theory_license_type);
   if (templateVariant && !theoryVariants[templateVariant]) {
     throw new Error(`Không hỗ trợ mẫu lý thuyết: ${templateVariant}`);
   }
-  if (templateVariant && licenseVariant && templateVariant !== licenseVariant) {
-    throw new Error("Hạng học viên không khớp với loại mẫu Word được chọn.");
-  }
-  return templateVariant || licenseVariant;
+  const questionNumbers = Object.keys(templateData || {}).some((key) => /^theory_q\d+_a[1-4]$/.test(key));
+  return questionNumbers ? theoryVariantFromQuestionCount(templateData) : templateVariant || "theory-b-30";
 };
 
 const templatePathFor = (templateType, templateVariant) => {
@@ -111,13 +108,35 @@ export const renderWordTemplate = async (templateType, templateData, outputPath,
     getSize: (_image, tagValue) => [tagValue?.width || 113, tagValue?.height || 151],
   });
   const templateZip = new PizZip(templateBuffer);
-  const documentXml = templateZip.file("word/document.xml")?.asText() || "";
+  let documentXml = templateZip.file("word/document.xml")?.asText() || "";
   const documentText = documentXml.replace(/<[^>]+>/g, "");
   const imageTag = safeType === "theory" ? "{{%theory_image}}" : "{{%simulation_image}}";
+  const hasImageTag = documentText.includes(imageTag);
+  if (hasImageTag) {
+    const rootTag = documentXml.match(/<w:document\b[^>]*>/)?.[0];
+    if (!rootTag) throw new Error("Mẫu Word thiếu thẻ gốc w:document.");
+
+    const imageNamespaces = {
+      r: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+      wp: "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
+      a: "http://schemas.openxmlformats.org/drawingml/2006/main",
+      pic: "http://schemas.openxmlformats.org/drawingml/2006/picture",
+    };
+    let rootTagWithImageNamespaces = rootTag;
+    for (const [prefix, namespace] of Object.entries(imageNamespaces)) {
+      if (!rootTagWithImageNamespaces.includes(`xmlns:${prefix}=`)) {
+        rootTagWithImageNamespaces = rootTagWithImageNamespaces.replace(">", ` xmlns:${prefix}="${namespace}">`);
+      }
+    }
+    if (rootTagWithImageNamespaces !== rootTag) {
+      documentXml = documentXml.replace(rootTag, rootTagWithImageNamespaces);
+      templateZip.file("word/document.xml", documentXml);
+    }
+  }
   const document = new Docxtemplater(templateZip, {
     delimiters: { start: "{{", end: "}}" },
     linebreaks: true,
-    modules: documentText.includes(imageTag) ? [imageModule] : [],
+    modules: hasImageTag ? [imageModule] : [],
   });
   const renderData = String(templateType || "").toLowerCase() === "theory"
     ? {

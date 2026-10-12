@@ -23,8 +23,8 @@ const statusFooters = {
 const state = { status: null, logs: [], query: "" };
 const byId = (id) => document.getElementById(id);
 const templateLabels = {
-  "theory-b-30": "Lý thuyết hạng B (30 câu)",
-  "theory-c1-35": "Lý thuyết hạng C1 (35 câu)",
+  "theory-b-30": "Lý thuyết (30 câu)",
+  "theory-c1-35": "Lý thuyết (35 câu)",
   simulation: "Mô phỏng",
 };
 
@@ -243,7 +243,12 @@ window.printAgent.onHistory((entries) => {
 });
 
 (async () => {
-  const [initialState, initialLogs] = await Promise.all([window.printAgent.getState(), window.printAgent.getLogs()]);
+  const [version, initialState, initialLogs] = await Promise.all([
+    window.printAgent.getVersion(),
+    window.printAgent.getState(),
+    window.printAgent.getLogs(),
+  ]);
+  byId("app-version").textContent = `PHIÊN BẢN ${version}`;
   updateStatus(initialState);
   state.logs = initialLogs;
   renderLogs();

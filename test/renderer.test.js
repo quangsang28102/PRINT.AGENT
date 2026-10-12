@@ -49,6 +49,57 @@ test("renders the local simulation Word form without unresolved tags", async () 
   }
 });
 
+test("renders the simulation result photo without a border around the photo cell or image", async () => {
+  const image = await sharp({
+    create: { width: 120, height: 160, channels: 3, background: "#e53935" },
+  }).jpeg().toBuffer();
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "hpo-agent-simulation-photo-test-"));
+  const outputPath = path.join(directory, "simulation-photo.docx");
+
+  try {
+    await renderWordTemplate("simulation", {
+      simulation_image: { value: image.toString("base64"), width: 113, height: 151 },
+    }, outputPath);
+
+    const zip = new PizZip(await fs.readFile(outputPath));
+    const documentXml = zip.file("word/document.xml").asText();
+    const drawingPosition = documentXml.indexOf("<w:drawing>");
+    const imageCellStart = documentXml.lastIndexOf("<w:tc>", drawingPosition);
+    const imageCellEnd = documentXml.indexOf("</w:tc>", drawingPosition) + "</w:tc>".length;
+    const imageCell = documentXml.slice(imageCellStart, imageCellEnd);
+    const drawing = documentXml.match(/<w:drawing>[\s\S]*?<\/w:drawing>/)?.[0] || "";
+
+    assert.ok(zip.file("word/media/image_generated_1.png"), "the result photo is embedded in the DOCX");
+    assert.match(imageCell, /<w:tcBorders>(?:(?!<\/w:tcBorders>)[\s\S])*<w:top w:val="nil"\/>[\s\S]*<\/w:tcBorders>/);
+    assert.match(drawing, /<a:ln[^>]*>[\s\S]*?<a:noFill\/>[\s\S]*?<\/a:ln>/);
+  } finally {
+    await fs.rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("all bundled Word forms use A4 portrait and printer Tray 1", async () => {
+  const templatePaths = [
+    path.join(import.meta.dirname, "..", "templates", "theory", "theory-b-30-result.docx"),
+    path.join(import.meta.dirname, "..", "templates", "theory", "theory-c1-35-result.docx"),
+    path.join(import.meta.dirname, "..", "templates", "simulation", "simulation-result.docx"),
+  ];
+
+  for (const templatePath of templatePaths) {
+    const zip = new PizZip(await fs.readFile(templatePath));
+    const documentXml = zip.file("word/document.xml").asText();
+    const sections = [...documentXml.matchAll(/<w:sectPr\b[\s\S]*?<\/w:sectPr>/g)].map((match) => match[0]);
+
+    assert.ok(sections.length > 0, `${path.basename(templatePath)} contains a section`);
+    for (const section of sections) {
+      const pageSize = section.match(/<w:pgSz\b[^>]*\/?>/)?.[0] || "";
+      assert.match(pageSize, /\bw:w="11906"/);
+      assert.match(pageSize, /\bw:h="16838"/);
+      assert.doesNotMatch(pageSize, /\bw:orient="landscape"/);
+      assert.match(section, /<w:paperSrc w:first="1" w:other="1"\/>/);
+    }
+  }
+});
+
 test("renders the theory form from the server print payload and localizes timestamps", async () => {
   const templateData = {
     theory_full_name: "NGUYỄN VĂN A",
@@ -74,7 +125,12 @@ test("renders the theory form from the server print payload and localizes timest
     assert.ok(documentXml.includes("06/10/2026 10:15"));
     assert.ok(documentXml.includes("06/10/2026 10:45"));
     assert.ok(documentXml.includes("28"));
-    assert.ok(documentXml.includes("[X]  ĐẠT"));
+    assert.ok(documentXml.includes(">X</w:t>"));
+    assert.ok(documentXml.includes('xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'));
+    assert.ok(documentXml.includes('xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"'));
+    assert.ok(documentXml.includes('xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'));
+    assert.ok(documentXml.includes('xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"'));
+    assert.ok(zip.file("word/media/image_generated_1.png"));
   } finally {
     await fs.rm(directory, { recursive: true, force: true });
   }
@@ -127,43 +183,53 @@ test("prefers a custom local template over the bundled template", async () => {
   }
 });
 
-test("selects separate theory templates for B and C1 license classes", async () => {
+test("selects theory templates by result question count, regardless of license metadata", async () => {
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "hpo-agent-theory-variants-test-"));
   const customTemplateDirectory = path.join(directory, "custom-templates");
-  const defaultTemplate = path.join(import.meta.dirname, "..", "templates", "theory", "theory-result.docx");
+  const defaultTemplate = path.join(import.meta.dirname, "..", "templates", "theory", "theory-b-30-result.docx");
   await fs.mkdir(customTemplateDirectory, { recursive: true });
 
   for (const [fileName, marker] of [["theory-b-30.docx", "FORM_B_30"], ["theory-c1-35.docx", "FORM_C1_35"]]) {
     const zip = new PizZip(await fs.readFile(defaultTemplate));
     const xml = zip.file("word/document.xml").asText();
-    assert.ok(xml.includes("HPO"), "fixture has its expected heading");
-    zip.file("word/document.xml", xml.replace("HPO", `${marker} HPO`));
+    const heading = "BIÊN BẢN SÁT HẠCH LÝ THUYẾT";
+    assert.ok(xml.includes(heading), "fixture has its expected heading");
+    zip.file("word/document.xml", xml.replace(heading, `${marker} ${heading}`));
     await fs.writeFile(path.join(customTemplateDirectory, fileName), zip.generate({ type: "nodebuffer" }));
   }
 
   try {
     const cases = [
-      { licenseType: "B (Số sàn)", fileMarker: "FORM_B_30" },
-      { licenseType: "B - Số tự động", fileMarker: "FORM_B_30" },
-      { licenseType: "C1", fileMarker: "FORM_C1_35" },
+      { licenseType: "C1", questionCount: 30, serverVariant: "theory-c1-35", fileMarker: "FORM_B_30" },
+      { licenseType: "B", questionCount: 31, serverVariant: "theory-b-30", fileMarker: "FORM_C1_35" },
+      { licenseType: "invalid-import-value", questionCount: 35, fileMarker: "FORM_C1_35" },
     ];
 
     for (const [index, item] of cases.entries()) {
+      const questionData = Object.fromEntries(Array.from({ length: item.questionCount }, (_, questionIndex) => [
+        `theory_q${String(questionIndex + 1).padStart(2, "0")}_a1`, "",
+      ]));
       const outputPath = path.join(directory, `result-${index}.docx`);
       await renderWordTemplate("theory", {
         theory_full_name: "THÍ SINH KIỂM THỬ",
         theory_license_type: item.licenseType,
-      }, outputPath, { customTemplateDirectory });
+        ...questionData,
+      }, outputPath, { customTemplateDirectory, templateVariant: item.serverVariant });
       const xml = new PizZip(await fs.readFile(outputPath)).file("word/document.xml").asText();
       assert.ok(xml.includes(item.fileMarker));
     }
 
-    await assert.rejects(
-      renderWordTemplate("theory", { theory_license_type: "C1" }, path.join(directory, "missing-c1.docx"), { customTemplateDirectory, templateVariant: "theory-b-30" }),
-      /không khớp với loại mẫu/,
-    );
     const bundledC1Path = path.join(directory, "bundled-c1.docx");
-    await renderWordTemplate("theory", { theory_license_type: "C1" }, bundledC1Path, { customTemplateDirectory: path.join(directory, "no-templates") });
+    const c1QuestionData = Object.fromEntries(Array.from({ length: 31 }, (_, questionIndex) => [
+      `theory_q${String(questionIndex + 1).padStart(2, "0")}_a1`, "",
+    ]));
+    await renderWordTemplate("theory", {
+      theory_license_type: "B",
+      ...c1QuestionData,
+    }, bundledC1Path, {
+      customTemplateDirectory: path.join(directory, "no-templates"),
+      templateVariant: "theory-b-30",
+    });
     const bundledC1Xml = new PizZip(await fs.readFile(bundledC1Path)).file("word/document.xml").asText();
     assert.ok(bundledC1Xml.includes("35"), "uses the bundled C1 form if no local custom form has been uploaded");
   } finally {

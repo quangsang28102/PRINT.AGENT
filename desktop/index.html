@@ -32,7 +32,7 @@
         <section class="page-view" id="dashboard-view">
         <section class="welcome-row">
           <div><h2>Xin chào 👋</h2><p>Kiểm tra kết nối và hoạt động in của máy này tại đây.</p></div>
-          <span class="version-chip">PHIÊN BẢN 1.9.1</span>
+          <span class="version-chip" id="app-version">PHIÊN BẢN</span>
         </section>
 
         <section class="status-card" id="status-card" data-phase="starting">
@@ -94,7 +94,7 @@
           <div class="template-grid">
             <article class="template-card" data-template-type="theory-b-30">
               <div class="template-card-heading"><div class="document-icon">W</div><div><span class="template-eyebrow">LÝ THUYẾT</span><h3>Hạng B · 30 câu</h3></div></div>
-              <p class="template-description">Dùng cho hạng B, gồm cả số sàn và số tự động.</p>
+              <p class="template-description">Dùng khi kết quả có tối đa 30 câu, không phụ thuộc hạng trong hồ sơ.</p>
               <div class="template-state" id="theory-b-30-template-state"></div>
               <div class="template-actions">
                 <button class="button button-primary template-choose" type="button" data-template-type="theory-b-30">Tải mẫu Word</button>
@@ -103,7 +103,7 @@
             </article>
             <article class="template-card" data-template-type="theory-c1-35">
               <div class="template-card-heading"><div class="document-icon">W</div><div><span class="template-eyebrow">LÝ THUYẾT</span><h3>Hạng C1 · 35 câu</h3></div></div>
-              <p class="template-description">Dùng riêng cho thí sinh dự sát hạch hạng C1.</p>
+              <p class="template-description">Dùng khi kết quả có trên 30 câu (mẫu tối đa 35 câu).</p>
               <div class="template-state" id="theory-c1-35-template-state"></div>
               <div class="template-actions">
                 <button class="button button-primary template-choose" type="button" data-template-type="theory-c1-35">Tải mẫu Word</button>
@@ -122,7 +122,7 @@
           </div>
           <div class="template-help">
             <strong>Lưu ý về mẫu Word</strong>
-            <p>Chọn file <code>.docx</code>. Hai mẫu Lý thuyết được lưu riêng: hạng B (30 câu) và hạng C1 (35 câu); Agent chọn theo hạng lấy từ hồ sơ học viên. Mẫu cần giữ nguyên các placeholder để dữ liệu bài thi được điền đúng vị trí.</p>
+            <p>Chọn file <code>.docx</code>. Hai mẫu Lý thuyết được lưu riêng: 30 câu và 35 câu. Agent chọn theo số câu trong kết quả, không theo hạng lấy từ hồ sơ học viên. Mẫu cần giữ nguyên các placeholder để dữ liệu bài thi được điền đúng vị trí.</p>
             <p>Mẫu riêng nằm trong AppData của tài khoản Windows này; cập nhật hoặc cài lại ứng dụng không ghi đè chúng.</p>
           </div>
         </section>
