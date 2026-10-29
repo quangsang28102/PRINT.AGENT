@@ -109,6 +109,7 @@ if ($canReusePairing) {
   $pairBody = @{ pairingCode = $PairingCode; machineName = $env:COMPUTERNAME; serviceVersion = $serviceVersion } | ConvertTo-Json
   Write-Host "Pairing Print Agent with server..."
   try {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $pairResponse = Invoke-RestMethod -Uri $pairingEndpoint -Method Post -ContentType "application/json" -Body $pairBody
   } catch {
     throw "Pairing failed: $($_.Exception.Message)"
