@@ -53,6 +53,20 @@ h1, h2, h3, p { margin-top: 0; }
 [data-phase="error"] .status-orb-inner, [data-phase="reconnecting"] .status-orb-inner { background: #e59a25; box-shadow: 0 0 0 7px #ffffffa8, 0 4px 10px #a3661830; }
 [data-phase="stopped"] .status-orb, [data-phase="stopping"] .status-orb { background: #edf1f3; }
 [data-phase="stopped"] .status-orb-inner, [data-phase="stopping"] .status-orb-inner { background: #94a1a8; box-shadow: 0 0 0 7px #ffffffa8, 0 4px 10px #56646c28; }
+.startup-setting-card { min-height: 76px; display: flex; align-items: center; gap: 14px; margin-top: 14px; padding: 14px 18px; border: 1px solid #e2e9ec; border-radius: 12px; background: #fff; box-shadow: 0 3px 9px #213b4d05; }
+.startup-setting-icon { width: 36px; height: 36px; flex: 0 0 36px; display: grid; place-items: center; border-radius: 9px; color: #0c8076; background: #e9f7f4; font-size: 22px; }
+.startup-setting-copy { min-width: 0; flex: 1; }
+.startup-setting-copy h2 { margin: 0 0 3px; color: #263b46; font-size: 15px; }
+.startup-setting-copy p { margin: 0; overflow: hidden; color: #7b8b94; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.startup-checkbox-label { position: relative; display: inline-flex; align-items: center; gap: 10px; min-height: 34px; cursor: pointer; }
+.startup-checkbox-text { color: #526670; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.startup-checkbox-label input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.startup-checkbox { position: relative; width: 42px; height: 24px; flex: 0 0 42px; border: 1px solid #cbd8dc; border-radius: 13px; background: #edf2f3; transition: .15s ease; }
+.startup-checkbox::after { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px #213b4d2b; content: ""; transition: .15s ease; }
+.startup-checkbox-label input:checked + .startup-checkbox { border-color: #0d8279; background: #0d8279; }
+.startup-checkbox-label input:checked + .startup-checkbox::after { transform: translateX(18px); }
+.startup-checkbox-label input:focus-visible + .startup-checkbox { outline: 3px solid #bde4dc; outline-offset: 2px; }
+.startup-checkbox-label input:disabled + .startup-checkbox { cursor: not-allowed; opacity: .55; }
 .status-kicker { margin-bottom: 4px; color: #71858c; font-size: 9px; font-weight: 800; letter-spacing: .12em; }
 .status-copy h2 { margin: 0 0 5px; color: #126b56; font-size: 20px; letter-spacing: -.025em; }
 [data-phase="error"] .status-copy h2, [data-phase="reconnecting"] .status-copy h2 { color: #9a6417; }

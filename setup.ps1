@@ -151,39 +151,50 @@ try {
   }
 } finally { Pop-Location }
 
+$startupTaskEnabled = $false
 if (-not $SkipTask) {
   $appExecutablePath = Join-Path $InstallDirectory "HPO Print Agent.exe"
   & (Join-Path $InstallDirectory "install-agent-task.ps1") -NodePath $nodePath -AgentDirectory $InstallDirectory -AppExecutablePath $appExecutablePath
-  $registrationStartedAt = [DateTimeOffset]::UtcNow
-  Start-ScheduledTask -TaskName "ExamPrintAgent"
-  $logPath = Join-Path $config.logDirectory "agent.log"
-  $deadline = (Get-Date).AddSeconds(45)
-  $registered = $false
-  while ((Get-Date) -lt $deadline -and -not $registered) {
-    if (Test-Path -LiteralPath $logPath) {
-      foreach ($line in (Get-Content -LiteralPath $logPath -Tail 100)) {
-        if ($line -match '^(?<time>\S+) registered (?<payload>\{.*\})$') {
-          $registeredAt = [DateTimeOffset]::MinValue
-          if (-not [DateTimeOffset]::TryParse($Matches.time, [ref]$registeredAt) -or $registeredAt -lt $registrationStartedAt.AddSeconds(-1)) { continue }
-          $ack = $Matches.payload | ConvertFrom-Json
-          if (-not $ack.ok) { throw "Agent registration failed: $($ack.message)" }
-          $registered = $true
-          break
+  $startupTask = Get-ScheduledTask -TaskName "ExamPrintAgent" -ErrorAction SilentlyContinue
+  if ($startupTask -and $startupTask.Settings.Enabled -eq $false) {
+    Write-Host "Startup task remains disabled according to the dashboard setting."
+  } else {
+    $startupTaskEnabled = $true
+    $registrationStartedAt = [DateTimeOffset]::UtcNow
+    Start-ScheduledTask -TaskName "ExamPrintAgent"
+    $logPath = Join-Path $config.logDirectory "agent.log"
+    $deadline = (Get-Date).AddSeconds(45)
+    $registered = $false
+    while ((Get-Date) -lt $deadline -and -not $registered) {
+      if (Test-Path -LiteralPath $logPath) {
+        foreach ($line in (Get-Content -LiteralPath $logPath -Tail 100)) {
+          if ($line -match '^(?<time>\S+) registered (?<payload>\{.*\})$') {
+            $registeredAt = [DateTimeOffset]::MinValue
+            if (-not [DateTimeOffset]::TryParse($Matches.time, [ref]$registeredAt) -or $registeredAt -lt $registrationStartedAt.AddSeconds(-1)) { continue }
+            $ack = $Matches.payload | ConvertFrom-Json
+            if (-not $ack.ok) { throw "Agent registration failed: $($ack.message)" }
+            $registered = $true
+            break
+          }
         }
       }
+      if (-not $registered) { Start-Sleep -Seconds 2 }
     }
-    if (-not $registered) { Start-Sleep -Seconds 2 }
-  }
-  if (-not $registered) {
-    $taskInfo = Get-ScheduledTaskInfo -TaskName "ExamPrintAgent" -ErrorAction SilentlyContinue
-    $taskResult = if ($taskInfo) { "Last task result: $($taskInfo.LastTaskResult)." } else { "Could not read the task result." }
-    $recentLog = if (Test-Path -LiteralPath $logPath) { (Get-Content -LiteralPath $logPath -Tail 8) -join "`n" } else { "No Agent log was created." }
-    throw "Setup started the Agent task, but the server did not confirm registration within 45 seconds. $taskResult Log: $logPath`nRecent log:`n$recentLog"
+    if (-not $registered) {
+      $taskInfo = Get-ScheduledTaskInfo -TaskName "ExamPrintAgent" -ErrorAction SilentlyContinue
+      $taskResult = if ($taskInfo) { "Last task result: $($taskInfo.LastTaskResult)." } else { "Could not read the task result." }
+      $recentLog = if (Test-Path -LiteralPath $logPath) { (Get-Content -LiteralPath $logPath -Tail 8) -join "`n" } else { "No Agent log was created." }
+      throw "Setup started the Agent task, but the server did not confirm registration within 45 seconds. $taskResult Log: $logPath`nRecent log:`n$recentLog"
+    }
   }
 }
 
 Write-Host "`nPrint Agent installation completed."
 Write-Host "Agent: $($pair.agentId)"
 Write-Host "Printer: $printerName"
-Write-Host "Agent connected successfully. The HPO Print Agent dashboard is running in the system tray."
+if ($startupTaskEnabled) {
+  Write-Host "Agent connected successfully. The HPO Print Agent dashboard is running in the system tray."
+} else {
+  Write-Host "Agent installed. Automatic startup is disabled; enable it from the HPO Print Agent dashboard when needed."
+}
 Write-Host "Keep this Windows account signed in while printing is needed."

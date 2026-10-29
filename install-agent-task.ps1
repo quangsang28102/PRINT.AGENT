@@ -21,6 +21,7 @@ $userName = $identity.Name
 
 # Word automation needs the logged-in user's desktop session; a LocalSystem service runs in session 0.
 $existingTask = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+$preserveTaskDisabled = $existingTask -and ($existingTask.Settings.Enabled -eq $false)
 if ($existingTask) {
   Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
   Start-Sleep -Milliseconds 500
@@ -71,5 +72,9 @@ Register-ScheduledTask `
   -Settings $settings `
   -Description "Runs the HPO Print Agent dashboard and printer connection in the signed-in user's Windows session." `
   -Force | Out-Null
+
+if ($preserveTaskDisabled) {
+  Disable-ScheduledTask -TaskName $taskName | Out-Null
+}
 
 Write-Output "Registered $taskName to run for $userName at sign-in."

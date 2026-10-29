@@ -6,7 +6,7 @@
 
 - **Dashboard Electron**: giao diện vận hành, khay hệ thống, trạng thái kết nối và nhật ký dễ đọc.
 - **Print Agent Node.js**: kết nối Socket.IO, nhận job, render DOCX và in bằng Word.
-- **Setup.exe**: cài app, ghép nối Agent, chọn máy in và đăng ký tự khởi động khi Windows đăng nhập.
+- **Setup.exe**: cài app, ghép nối Agent, chọn máy in và đăng ký tác vụ tự khởi động khi Windows đăng nhập.
 
 EXAM.SERVER quản lý room, Agent, máy in, hàng đợi và API. EXAM.ADMIN.HPO quản lý giao diện quản trị. Repo này chỉ phụ trách app Windows và bộ cài.
 
@@ -30,7 +30,7 @@ Tab **Cấu hình mẫu in** cho phép chọn DOCX riêng cho Lý thuyết hạn
 
 Dashboard cho biết Agent đã kết nối, đang kết nối lại hay đang tạm dừng. Nhật ký hiển thị nội dung tiếng Việt; có thể mở chi tiết kỹ thuật khi cần hỗ trợ. Nút **Kết nối lại** khởi động lại tiến trình Agent do app quản lý. Nút **Tạm dừng** ngắt Agent; đóng cửa sổ bằng X chỉ thu app xuống khay hệ thống.
 
-Giữ tài khoản Windows đăng nhập trong thời gian cần in. App tự chạy lại khi người dùng đăng nhập. Xem [hướng dẫn cài đặt](docs/installation.md) và [ghép nối](docs/pairing.md).
+Giữ tài khoản Windows đăng nhập trong thời gian cần in. Trong dashboard, checkbox **Chạy cùng Windows** cho phép bật hoặc tắt việc tự mở ứng dụng khi người dùng đăng nhập; thay đổi này áp dụng từ lần đăng nhập tiếp theo. Xem [hướng dẫn cài đặt](docs/installation.md) và [ghép nối](docs/pairing.md).
 
 ## Kiểm tra và bảo mật
 

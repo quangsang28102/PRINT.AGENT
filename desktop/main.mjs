@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, screen, shell, Tray } from "electron/main";
-import { fork } from "node:child_process";
+import { execFile, fork } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,6 +11,7 @@ const developmentRoot = path.resolve(desktopDirectory, "..");
 const installDirectory = app.isPackaged ? path.dirname(app.getPath("exe")) : developmentRoot;
 const configPath = path.join(installDirectory, "config.json");
 const agentEntryPath = path.join(installDirectory, "index.js");
+const startupTaskName = "ExamPrintAgent";
 const templateTypes = {
   "theory-b-30": { label: "Lý thuyết (30 câu)", fileName: "theory-b-30.docx", defaultDirectory: "theory", defaultFileName: "theory-b-30-result.docx" },
   "theory-c1-35": { label: "Lý thuyết (35 câu)", fileName: "theory-c1-35.docx", defaultDirectory: "theory", defaultFileName: "theory-c1-35-result.docx" },
@@ -68,6 +69,67 @@ if (!singleInstance) {
     logBuffer.push(entry);
     if (logBuffer.length > 400) logBuffer = logBuffer.slice(-400);
     broadcast("agent:log", entry);
+  }
+
+  function runWindowsCommand(command, args, options = {}) {
+    return new Promise((resolve, reject) => {
+      execFile(command, args, {
+        ...options,
+        windowsHide: true,
+        encoding: "utf8",
+      }, (error, stdout, stderr) => {
+        if (error) {
+          const commandOutput = String(stderr || stdout || "").trim();
+          if (commandOutput) error.message = commandOutput;
+          reject(error);
+          return;
+        }
+        resolve({ stdout: String(stdout || ""), stderr: String(stderr || "") });
+      });
+    });
+  }
+
+  async function getStartupState() {
+    if (process.platform !== "win32") {
+      return { available: false, exists: false, enabled: false, error: "Cấu hình này chỉ có trên Windows." };
+    }
+
+    const query = [
+      "$task = Get-ScheduledTask -TaskName 'ExamPrintAgent' -ErrorAction SilentlyContinue;",
+      "if ($null -eq $task) { 'missing' }",
+      "elseif ($task.Settings.Enabled -eq $false) { 'disabled' }",
+      "else { 'enabled' }",
+    ].join(" ");
+    try {
+      const result = await runWindowsCommand("powershell.exe", [
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        query,
+      ], { timeout: 5000 });
+      const stateValue = result.stdout.trim().toLowerCase();
+      if (stateValue === "missing") return { available: true, exists: false, enabled: false };
+      return { available: true, exists: true, enabled: stateValue === "enabled" };
+    } catch (error) {
+      return { available: true, exists: false, enabled: false, error: `Không đọc được cấu hình chạy cùng Windows: ${error.message}` };
+    }
+  }
+
+  async function setStartupEnabled(enabled) {
+    if (process.platform !== "win32") throw new Error("Cấu hình này chỉ có trên Windows.");
+    const current = await getStartupState();
+    if (current.error) throw new Error(current.error);
+    if (!current.exists) throw new Error("Chưa tìm thấy tác vụ chạy cùng Windows. Hãy chạy lại Setup.exe để đăng ký tác vụ.");
+
+    await runWindowsCommand("schtasks.exe", [
+      "/Change",
+      "/TN",
+      startupTaskName,
+      enabled ? "/ENABLE" : "/DISABLE",
+    ], { timeout: 10000 });
+    return getStartupState();
   }
 
   function updateTray() {
@@ -409,6 +471,12 @@ if (!singleInstance) {
 
   ipcMain.handle("app:get-version", () => app.getVersion());
   ipcMain.handle("agent:get-state", () => ({ ...status }));
+  ipcMain.handle("agent:get-startup-state", () => getStartupState());
+  ipcMain.handle("agent:set-startup", async (_event, enabled) => {
+    const startupState = await setStartupEnabled(Boolean(enabled));
+    broadcast("agent:startup", startupState);
+    return startupState;
+  });
   ipcMain.handle("agent:get-logs", () => [...logBuffer]);
   ipcMain.handle("agent:start", () => startAgent());
   ipcMain.handle("agent:reconnect", () => reconnectAgent());

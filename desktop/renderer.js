@@ -20,7 +20,7 @@ const statusFooters = {
   error: "Mở nhật ký để xem hướng xử lý",
 };
 
-const state = { status: null, logs: [], query: "" };
+const state = { status: null, logs: [], query: "", startup: null };
 const byId = (id) => document.getElementById(id);
 const templateLabels = {
   "theory-b-30": "Lý thuyết (30 câu)",
@@ -52,6 +52,24 @@ function updateStatus(status) {
   byId("reconnect-button").disabled = ["connecting", "registering", "stopping"].includes(phase);
   byId("reconnect-button").querySelector("span").textContent = phase === "stopped" || phase === "error" ? "Khởi động Agent" : "Kết nối lại";
   byId("stop-button").disabled = ["stopped", "stopping"].includes(phase);
+}
+
+function renderStartupSetting(startup) {
+  state.startup = startup;
+  const checkbox = byId("startup-checkbox");
+  const detail = byId("startup-setting-detail");
+  checkbox.checked = Boolean(startup?.enabled);
+  checkbox.disabled = !startup || startup.available === false || Boolean(startup.error) || !startup.exists;
+
+  if (startup?.error) {
+    detail.textContent = startup.error;
+  } else if (!startup?.exists) {
+    detail.textContent = "Chưa có tác vụ. Hãy chạy lại Setup.exe để bật tùy chọn này.";
+  } else if (startup.enabled) {
+    detail.textContent = "Ứng dụng sẽ tự khởi động khi tài khoản Windows đăng nhập.";
+  } else {
+    detail.textContent = "Đã tắt. Bạn vẫn có thể mở ứng dụng thủ công khi cần.";
+  }
 }
 
 function makeLogRow(entry) {
@@ -116,6 +134,19 @@ byId("reconnect-button").addEventListener("click", async () => {
 byId("stop-button").addEventListener("click", async () => {
   const accepted = window.confirm("Tạm dừng Agent? Máy này sẽ không nhận lệnh in cho đến khi bạn khởi động lại.");
   if (accepted) await window.printAgent.stop();
+});
+
+byId("startup-checkbox").addEventListener("change", async (event) => {
+  const checkbox = event.currentTarget;
+  const enabled = checkbox.checked;
+  checkbox.disabled = true;
+  try {
+    renderStartupSetting(await window.printAgent.setStartupEnabled(enabled));
+  } catch (error) {
+    checkbox.checked = !enabled;
+    checkbox.disabled = false;
+    window.alert(error.message || "Không thể cập nhật cấu hình chạy cùng Windows.");
+  }
 });
 
 async function openLogs() {
@@ -236,6 +267,7 @@ document.querySelectorAll(".template-reset").forEach((button) => {
 });
 
 window.printAgent.onStatus(updateStatus);
+window.printAgent.onStartup(renderStartupSetting);
 window.printAgent.onLog(appendLog);
 window.printAgent.onHistory((entries) => {
   state.logs = Array.isArray(entries) ? entries : [];
@@ -243,13 +275,15 @@ window.printAgent.onHistory((entries) => {
 });
 
 (async () => {
-  const [version, initialState, initialLogs] = await Promise.all([
+  const [version, initialState, initialLogs, initialStartup] = await Promise.all([
     window.printAgent.getVersion(),
     window.printAgent.getState(),
     window.printAgent.getLogs(),
+    window.printAgent.getStartupState(),
   ]);
   byId("app-version").textContent = `PHIÊN BẢN ${version}`;
   updateStatus(initialState);
+  renderStartupSetting(initialStartup);
   state.logs = initialLogs;
   renderLogs();
 })();

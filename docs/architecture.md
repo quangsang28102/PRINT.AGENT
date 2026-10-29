@@ -83,7 +83,7 @@ SERVER gửi PrintJobAvailable
 
 ## 6. Chạy nền, log và vận hành
 
-- Setup đăng ký Scheduled Task `ExamPrintAgent` chạy ứng dụng trong phiên tương tác của tài khoản Windows khi đăng nhập. App có thể thu xuống system tray; chọn **Thoát** hoặc **Tạm dừng** sẽ dừng agent.
+- Setup đăng ký Scheduled Task `ExamPrintAgent` chạy ứng dụng trong phiên tương tác của tài khoản Windows khi đăng nhập. Checkbox **Chạy cùng Windows** trong dashboard bật/tắt task này; thay đổi chỉ ảnh hưởng các lần đăng nhập sau. App có thể thu xuống system tray; chọn **Thoát** hoặc **Tạm dừng** sẽ dừng agent.
 - Máy cần duy trì phiên đăng nhập Windows để Microsoft Word COM hoạt động ổn định; đây không phải Windows Service chạy trong phiên không có người dùng.
 - Dashboard cho phép xem log và mở thư mục log. Log agent mặc định nằm tại `C:\ProgramData\ExamPrintAgent\logs\agent.log`.
 - Khi kiểm tra sự cố, đối chiếu trạng thái tiến trình trong app, log `connected`/`registered`/heartbeat, trạng thái agent ở ADMIN, log job và hàng đợi in Windows.
